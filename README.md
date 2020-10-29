@@ -1,14 +1,14 @@
 # WebAuth
 >A small project to illustrate the use of Redis for authentication and authorisation.
 
-##Context
+## Context
 While developing a website to take sudent role calls on the phone, I decided to
 use MySQL for the student database and a Redis for authentication and 
 authorisation. I am using Openresty (NGINX) as my webserver. Since all the code 
 will be in Lua. The project is still its alpha
 stage and a public user name and password will soon be provided.
 
-##Why Redis
+## Why Redis
 Redis a NOSQL key-value database. While the type of the key can be only a string
 the type of a value can in addition to being a primitive type like number, string, blob or
 hyperloglog, can also be a set, a map or a sequence. A map in Redis is called a
@@ -20,7 +20,7 @@ A set cannot contain another set. With some discipline though we could
 achieve the same result by having a set of keys with each key refering to
 another set or map or requence.
 
-##Authentication
+## Authentication
 User names and hashed passwords are store in a map whose key is 
 "users:passwords". One of the first design issues that needs to be addressed
 is nomenclature of keys. I use the convention that the prefixi, "users" in this

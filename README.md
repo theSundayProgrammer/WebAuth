@@ -100,14 +100,14 @@ adds "role" to set "assets:<asset_name>"
 deletes the "asset" from the set "users:assets" and deletes the key "asset:<asset_name>"
 * **del_user**_(user)_
 deletes the key "<user_name>" from the map "users:passwords" and deletes the key-value pair with key "user:<user_name>"
-* **add_user**_(user,pwd)__
+* **add_user**_(user,pwd)_
 adds key-value <user,hashed_pwd> to the map "users:passwords" Notice that if the user exists already its password is overwritten
 * **verify_pwd**_(user,pwd)_
 verify the password as shown above
 * **user_auth**_(user,asset)_
-Comoutes the intersection of "user:<user_name>" and "asset:<asset_name>" and returns true if the set contains at least one element
+Computes the intersection of "user:<user_name>" and "asset:<asset_name>" and returns true if the set contains at least one element
 * **del_roles**_(role)_
-"role" is removed from the set "users:roles", and from every set "user:*" and "asset:*"
+"role" is removed from the set "users:roles", and from every set "user:\*" and "asset:\*"
 * **get_roles**_()_
 gets the list of all roles
 

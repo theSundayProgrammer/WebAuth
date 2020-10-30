@@ -5,8 +5,12 @@
 While developing a website to take sudent role calls on the phone, I decided to
 use MySQL for the student database and a Redis for authentication and 
 authorisation. I am using Openresty (NGINX) as my webserver. Since all the code 
-will be in Lua. The project is still its alpha
-stage and a public user name and password will soon be provided.
+will be in Lua. The [project](https://github.com/theSundayProgrammer/WebAuth) is still its alpha
+stage but for now logging with uid/pwd : joe3/password  at 
+[Norwest Computing](https://test.norwestcomputing.com.au/new_class) 
+will get you access to the attendance register for a fictional class.
+In the first stage only I am publishing only the user authentication part. In the 
+next stage I will publish the actual 
 
 ## Why Redis
 Redis a NOSQL key-value database. While the type of the key can be only a string
@@ -67,5 +71,32 @@ function verify_pwd(user,pwd)
   end                                  
 end
 ````
+A simple usage example is shown below:
+````lua
+local usrauth=require "check_redis"
+local user="joe3"
+local password="password"
+local verified,err = usrauth.verify_pwd(user,password)
+if verified and verified==1 then
+--success
+else
+--fail
+end
+````
+The list of functions available are: 
+
+* *add_role*_(user,role)_
+* *del_user_role*_(user,role)_
+* *get_assets*_()_
+* *get_users*_()_
+* *add_asset*_(asset,role)_
+* *del_asset*_(asset)_
+* *del_user*_(user)_
+* *add_user*_(user,pwd)__
+* *verify_pwd*_(user,pwd)_
+* *update_newpwd*_(user,oldpwd,newpwd)_
+* *user_auth*_(user,asset)_
+* *del_roles*_(role)_
+* *get_roles*_()_
 
 

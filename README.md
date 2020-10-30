@@ -87,9 +87,9 @@ end
 The list of functions available are: 
 
 * **add_role**_(user,role)_
-*add_role* adds a role to the set "user:<user_name>"
+ adds a role to the set "user:<user_name>"
 * **del_user_role**_(user,role)_
-*del_user_role* deletes a role from the set "user:<user_name>"
+ deletes a role from the set "user:<user_name>"
 * **get_assets**_()_
 gets the set "users:assets"
 * **get_users**_()_

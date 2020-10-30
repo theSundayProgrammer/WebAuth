@@ -33,15 +33,16 @@ to create a key for a specific user say, "user:joe."
 
 The password may be hashed as follows:
 ````lua
-	local function hash_pwd(user,pwd)  
-	local sha256 = require"resty.sha256"
-	  local chunk = sha256:new() -- create a private closure for calculating digest of single string
-	  local seed="hsGtghLTh5fglo6d" -- secret prefix
-	  chunk:update(user)
-	  chunk:update(seed) 
-	  chunk:update(pwd)               
-	  return str.to_hex(chunk:final())
-	end
+local function hash_pwd(user,pwd)  
+local sha256 = require"resty.sha256"
+-- create a private closure for calculating digest of single string
+  local chunk = sha256:new() 
+  local seed="hsGtghLTh5fglo6d" -- secret prefix
+  chunk:update(user)
+  chunk:update(seed) 
+  chunk:update(pwd)               
+  return str.to_hex(chunk:final())
+end
 ````
 The following helper function  wraps the openning and closing of connection for 
 a redis command
@@ -85,18 +86,28 @@ end
 ````
 The list of functions available are: 
 
-* *add_role*_(user,role)_
-* *del_user_role*_(user,role)_
-* *get_assets*_()_
-* *get_users*_()_
-* *add_asset*_(asset,role)_
-* *del_asset*_(asset)_
-* *del_user*_(user)_
-* *add_user*_(user,pwd)__
-* *verify_pwd*_(user,pwd)_
-* *update_newpwd*_(user,oldpwd,newpwd)_
-* *user_auth*_(user,asset)_
-* *del_roles*_(role)_
-* *get_roles*_()_
-
+* **add_role**_(user,role)_
+*add_role* adds a role to the set "user:<user_name>"
+* **del_user_role**_(user,role)_
+*del_user_role* deletes a role from the set "user:<user_name>"
+* **get_assets**_()_
+gets the set "users:assets"
+* **get_users**_()_
+gets the set of keys of the set "users:passwords"
+* **add_asset**_(asset\_name,role)_
+adds "role" to set "assets:<asset_name>"
+* **del_asset**_(asset)_
+deletes the "asset" from the set "users:assets" and deletes the key "asset:<asset_name>"
+* **del_user**_(user)_
+deletes the key "<user_name>" from the map "users:passwords" and deletes the key-value pair with key "user:<user_name>"
+* **add_user**_(user,pwd)__
+adds key-value <user,hashed_pwd> to the map "users:passwords" Notice that if the user exists already its password is overwritten
+* **verify_pwd**_(user,pwd)_
+verify the password as shown above
+* **user_auth**_(user,asset)_
+Comoutes the intersection of "user:<user_name>" and "asset:<asset_name>" and returns true if the set contains at least one element
+* **del_roles**_(role)_
+"role" is removed from the set "users:roles", and from every set "user:*" and "asset:*"
+* **get_roles**_()_
+gets the list of all roles
 

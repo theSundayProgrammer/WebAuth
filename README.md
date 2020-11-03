@@ -4,13 +4,48 @@
 ## Context
 While developing a website to take sudent role calls on the phone, I decided to
 use MySQL for the student database and a Redis for authentication and 
-authorisation. I am using Openresty (NGINX) as my webserver. Since all the code 
+authorisation. I am using Openresty (NGINX) as my webserver. Hence all the code 
 will be in Lua. The [project](https://github.com/theSundayProgrammer/WebAuth) is still its alpha
 stage but for now logging with uid/pwd : joe3/password  at 
 [Norwest Computing](https://test.norwestcomputing.com.au/new_class) 
 will get you access to the attendance register for a fictional class.
 In the first stage only I am publishing only the user authentication part. In the 
 next stage I will publish the actual 
+## Basic Authentication
+Nginx provides a [simple authentication schema](https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/). 
+It consists of a simple text file with user names and hashed passwords. In the 
+following configuration any web client trying to access the _/api_ area will be
+prompted for a password unless the client has alreday logged in
+    location /api {
+      auth_basic           “Administrator’s Area”;
+      auth_basic_user_file /etc/apache2/.htpasswd; 
+    ..........
+    }
+
+Here _/etc/apache2/.htpasswd_ is the text file containing user names and passwords.
+This type of authentication will suffice for a website with a small number of users.
+Authorisation, of the all-or-nothing kind can be implemented by having different
+password files for different locations. 
+So if a user has to be removed the user name must be removed from all the password files
+
+## Advanced Authentication
+Using a datbase to store the username and password has some advantages; the main
+one being concurerency (a database can be read and updated concuurently). The other
+advantage would be that it is possible to implement authorisation based on roles
+or groups as well. However
+a full Role Based Access Control (RBAC) has to be implemented by the database server.
+
+### Javascript Web Tokens
+JWT  (Javascript Web Tokens) is a convention used to save the authentication details 
+in a cookie. The user name and other details such as time to expire is encrypted 
+and stored in a cookie. Since a HTTP request is stateless the cookie contains
+all the details about the user. Thus if there are multiple servers are used for load
+balancing any server can decoded the JWT token if the secret key to encrytpt 
+it is known.
+
+Hence if a location needs a user to be authenticated then the user is redirected 
+to a logon page. On successful logon the user is then redirected to the requested
+page. The implementation of this functionality is present in 'check_access.lua'
 
 ## Why Redis
 Redis a NOSQL key-value database. While the type of the key can be only a string

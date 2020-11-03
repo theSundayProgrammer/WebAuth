@@ -2,9 +2,9 @@
 >A small project to illustrate the use of Redis for authentication and authorisation.
 
 ## Context
-While developing a website to take sudent role calls on the phone, I decided to
+While developing a website to take student role calls on the phone, I decided to
 use MySQL for the student database and a Redis for authentication and 
-authorisation. I am using Openresty (NGINX) as my webserver. Hence all the code 
+authorisation. I am using Openresty (NGINX) as my web server. Hence all the code 
 will be in Lua. The [project](https://github.com/theSundayProgrammer/WebAuth) is still its alpha
 stage but for now logging with uid/pwd : joe3/password  at 
 [Norwest Computing](https://test.norwestcomputing.com.au/new_class) 
@@ -48,7 +48,7 @@ to a logon page. On successful logon the user is then redirected to the requeste
 page. The implementation of this functionality is present in 'check_access.lua'
 
 ## Why Redis
-Redis a NOSQL key-value database. While the type of the key can be only a string
+Redis is a NOSQL key-value database. While the type of the key can be only a string
 the type of a value can in addition to being a primitive type like number, string, blob or
 hyperloglog, can also be a set, a map or a sequence. A map in Redis is called a
 HMAP  or hasp-map, indicating its implementation, and a sequence is called a list. For details refer to Redis.
@@ -57,7 +57,7 @@ Notice that the three data structures: set, map and sequence cover almost all
 dat structure requirements. Redis does not provide a recursive data structure.
 A set cannot contain another set. With some discipline though we could
 achieve the same result by having a set of keys with each key refering to
-another set or map or requence.
+another set or map or sequence.
 
 ## Authentication
 User names and hashed passwords are store in a map whose key is 

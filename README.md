@@ -1,5 +1,5 @@
 # WebAuth
->A small project to illustrate the use of Redis for authentication and authorisation.
+>A Openresty project to illustrate the use of Redis for authentication and authorisation.
 
 ## Context
 While developing a website to take student role calls on the phone, I decided to

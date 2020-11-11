@@ -16,13 +16,13 @@ Nginx provides a [simple authentication schema](https://docs.nginx.com/nginx/adm
 It consists of a simple text file with user names and hashed passwords. In the 
 following configuration any web client trying to access the _/api_ area will be
 prompted for a password unless the client has alreday logged in
-<code>
+````
     location /api {
       auth_basic           “Administrator’s Area”;
       auth_basic_user_file /etc/apache2/.htpasswd; 
     ..........
     }
-</code>
+````
 Here _/etc/apache2/.htpasswd_ is the text file containing user names and passwords.
 This type of authentication will suffice for a website with a small number of users.
 Authorisation, of the all-or-nothing kind can be implemented by having different

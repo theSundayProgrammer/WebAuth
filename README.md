@@ -15,7 +15,7 @@ next stage I will publish the actual
 Nginx provides a [simple authentication schema](https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/). 
 It consists of a simple text file with user names and hashed passwords. In the 
 following configuration any web client trying to access the _/api_ area will be
-prompted for a password unless the client has alreday logged in
+prompted for a password unless the client has already logged in
 ````
     location /api {
       auth_basic           “Administrator’s Area”;
@@ -40,11 +40,11 @@ a full Role Based Access Control (RBAC) has to be implemented by the database se
 JWT  (Javascript Web Tokens) is a convention used to save the authentication details 
 in a cookie. The user name and other details such as time to expire is encrypted 
 and stored in a cookie. Since a HTTP request is stateless the cookie contains
-all the details about the user. Thus if there are multiple servers are used for load
-balancing any server can decoded the JWT token if the secret key to encrytpt 
+all the details about the user. Thus if multiple servers are used for load
+balancing any server can decode the JWT token if the secret key to encrytpt 
 it is known.
 
-Hence if a location needs a user to be authenticated then the user is redirected 
+Hence if a web-location needs a user to be authenticated then the user is redirected 
 to a logon page. On successful logon the user is then redirected to the requested
 page. The implementation of this functionality is present in 'check_access.lua'
 
@@ -52,10 +52,11 @@ page. The implementation of this functionality is present in 'check_access.lua'
 Redis is a NOSQL key-value database. While the type of the key can be only a string
 the type of a value can in addition to being a primitive type like number, string, blob or
 hyperloglog, can also be a set, a map or a sequence. A map in Redis is called a
-HMAP  or hasp-map, indicating its implementation, and a sequence is called a list. For details refer to Redis.
+HMAP  or hasp-map, indicating its implementation, and a sequence is called a
+list. For details refer to Redis.
 
 Notice that the three data structures: set, map and sequence cover almost all
-dat structure requirements. Redis does not provide a recursive data structure.
+data structure requirements. Redis does not provide a recursive data structure.
 A set cannot contain another set. With some discipline though we could
 achieve the same result by having a set of keys with each key refering to
 another set or map or sequence.

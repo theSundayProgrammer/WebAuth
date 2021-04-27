@@ -38,11 +38,10 @@ a full Role Based Access Control (RBAC) has to be implemented by the database se
 
 ### Javascript Web Tokens
 JWT  (Javascript Web Tokens) is a convention used to save the authentication details 
-in a cookie. The user name and other details such as time to expire is encrypted 
-and stored in a cookie. Since a HTTP request is stateless the cookie contains
+in a cookie. The user name and other details such as time to expire is stored with a signature in a cookie. Since a HTTP request is stateless the cookie contains
 all the details about the user. Thus if multiple servers are used for load
-balancing any server can decode the JWT token if the secret key to encrytpt 
-it is known.
+balancing any server can verify the JWT token if the secret key to sign
+it is known. The contents are base64 encoded and hence accessible to the client 
 
 Hence if a web-location needs a user to be authenticated then the user is redirected 
 to a logon page. On successful logon the user is then redirected to the requested

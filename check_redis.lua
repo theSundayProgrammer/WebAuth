@@ -17,7 +17,8 @@ local M={}
 local function exec(func)
   local red = redis:new()
 
-  red:set_timeouts(1000, 1000, 1000) -- 1 sec
+  --red:set_timeouts(1000, 1000, 1000) -- 1 sec
+  red:set_timeout(1000) -- 1 sec
   assert( red:connect("127.0.0.1", 6379))
   local results, err = func(red)
   red:set_keepalive(1000,100)

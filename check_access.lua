@@ -24,9 +24,14 @@ function M.init(cur_uri)
     if (usr~=nil and pwd~=nil )  then
       local res= assert(usrpwd.verify_pwd(usr,pwd)) 
       if res  ==0 then
-        ngx.header["Set-Cookie"] = "myuri="..cur_uri..";path=/logon"
-        ngx.log(ngx.NOTICE,"myuri=",uri)
-        return ngx.redirect(login_page)
+        local uri = ngx.var.cookie_myuri
+	if uri then
+        ngx.log(ngx.NOTICE,"old:myuri=",uri)
+         else
+        ngx.log(ngx.NOTICE,"set:myuri=",cur_uri)
+        ngx.header["Set-Cookie"] = "myuri="..cur_uri..";path=/"
+       end
+        return ngx.redirect("/login_repeat.html")
       else
         local uri = ngx.var.cookie_myuri
         local jwt = require "resty.jwt"
@@ -37,7 +42,7 @@ function M.init(cur_uri)
         ngx.header["Set-Cookie"] = "jwt="..jwt_token..";path=/"
         ngx.ctx.usr=usr
         if uri then
-          ngx.log(ngx.NOTICE,"myuri=",uri)
+          ngx.log(ngx.NOTICE,"read: myuri=",uri)
           ngx.redirect(uri)
         else
           ngx.log(ngx.NOTICE,"uri not found ")
@@ -54,6 +59,8 @@ function M.init(cur_uri)
     ngx.log(ngx.NOTICE,"myuri=",uri)
     ngx.ctx.usr=jwt_obj.payload.user
   else
+    ngx.header["Set-Cookie"] = "myuri="..cur_uri..";path=/"
+    ngx.log(ngx.NOTICE,"init:myuri=",cur_uri)
     return ngx.redirect(login_page)
   end
 end

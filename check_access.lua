@@ -14,25 +14,20 @@ local function verify(token)
   return jwt:verify(jwt_secret, token,claim_spec)
 end
 
-function M.init(cur_uri)
+function M.login()
   local usrpwd=require "check_redis"
   ngx.req.read_body()
   local args, err = ngx.req.get_post_args()
+  -- if user and password exist use that
+  -- rather than the JWt token
   if args then
     local usr= args.user;
     local pwd = args.password;
     if (usr~=nil and pwd~=nil )  then
       local res= assert(usrpwd.verify_pwd(usr,pwd)) 
-      if res  ==0 then
-        local uri = ngx.var.cookie_myuri
-	if uri then
-        ngx.log(ngx.NOTICE,"old:myuri=",uri)
-         else
-        ngx.log(ngx.NOTICE,"set:myuri=",cur_uri)
-        ngx.header["Set-Cookie"] = "myuri="..cur_uri..";path=/"
-       end
-        return ngx.redirect("/login_repeat.html")
-      else
+      if res  ~=0 then
+	-- password succeeded
+	-- then create JWT and set cookie
         local uri = ngx.var.cookie_myuri
         local jwt = require "resty.jwt"
         local jwt_token = jwt:sign ( jwt_secret,{
@@ -42,23 +37,24 @@ function M.init(cur_uri)
         ngx.header["Set-Cookie"] = "jwt="..jwt_token..";path=/"
         ngx.ctx.usr=usr
         if uri then
-          ngx.log(ngx.NOTICE,"read: myuri=",uri)
-          ngx.redirect(uri)
-        else
-          ngx.log(ngx.NOTICE,"uri not found ")
+          return ngx.redirect(uri)
+	else
+          return true
         end
-        return 
       end
     end
   end
+  return ngx.redirect("/login_repeat.html")
+  end
+  function M.verify_jwt(cur_uri)
   local jwt_token =  ngx.var.cookie_jwt
   local jwt_obj = jwt_token and verify(jwt_token)
   if jwt_obj and jwt_obj["verified"] then
-    local uri = ngx.var.cookie_myuri  or ngx.var.uri
-    ngx.header["Set-Cookie"] = "myuri="..uri..";path=/logon"
-    ngx.log(ngx.NOTICE,"myuri=",uri)
     ngx.ctx.usr=jwt_obj.payload.user
   else
+    -- No JWT
+    -- save the current uri in a cookie 
+    -- and redirect to login page
     ngx.header["Set-Cookie"] = "myuri="..cur_uri..";path=/"
     ngx.log(ngx.NOTICE,"init:myuri=",cur_uri)
     return ngx.redirect(login_page)

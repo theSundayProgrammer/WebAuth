@@ -1,0 +1,199 @@
+\hypertarget{webauth}{%
+\section{WebAuth}\label{webauth}}
+
+\begin{quote}
+A small project to illustrate the use of Redis for authentication and
+authorisation.
+\end{quote}
+
+\hypertarget{context}{%
+\subsection{Context}\label{context}}
+
+While developing a website to take student role calls on the phone, I
+decided to use MySQL for the student database and a Redis for
+authentication and authorisation. I am using Openresty (NGINX) as my web
+server. Hence all the code will be in Lua. The
+\href{https://github.com/theSundayProgrammer/WebAuth}{project} is still
+its alpha stage but for now logging with uid/pwd : joe3/password at
+\href{https://test.norwestcomputing.com.au/new_class}{Norwest Computing}
+will get you access to the attendance register for a fictional class. In
+the first stage only I am publishing only the user authentication part.
+In the next stage I will publish the actual \#\# Basic Authentication
+Nginx provides a
+\href{https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/}{simple
+authentication schema}. It consists of a simple text file with user
+names and hashed passwords. In the following configuration any web
+client trying to access the \emph{/api} area will be prompted for a
+password unless the client has alreday logged in location /api \{
+auth\_basic ``Administrator's Area''; auth\_basic\_user\_file
+/etc/apache2/.htpasswd; \ldots{}\ldots{}\ldots{}. \}
+
+Here \emph{/etc/apache2/.htpasswd} is the text file containing user
+names and passwords. This type of authentication will suffice for a
+website with a small number of users. Authorisation, of the
+all-or-nothing kind can be implemented by having different password
+files for different locations. So if a user has to be removed the user
+name must be removed from all the password files
+
+\hypertarget{advanced-authentication}{%
+\subsection{Advanced Authentication}\label{advanced-authentication}}
+
+Using a datbase to store the username and password has some advantages;
+the main one being concurerency (a database can be read and updated
+concuurently). The other advantage would be that it is possible to
+implement authorisation based on roles or groups as well. However a full
+Role Based Access Control (RBAC) has to be implemented by the database
+server.
+
+\hypertarget{javascript-web-tokens}{%
+\subsubsection{Javascript Web Tokens}\label{javascript-web-tokens}}
+
+JWT (Javascript Web Tokens) is a convention used to save the
+authentication details in a cookie. The user name and other details such
+as time to expire is encrypted and stored in a cookie. Since a HTTP
+request is stateless the cookie contains all the details about the user.
+Thus if there are multiple servers are used for load balancing any
+server can decoded the JWT token if the secret key to encrytpt it is
+known.
+
+Hence if a location needs a user to be authenticated then the user is
+redirected to a logon page. On successful logon the user is then
+redirected to the requested page. The implementation of this
+functionality is present in `check\_access.lua'
+
+\hypertarget{why-redis}{%
+\subsection{Why Redis}\label{why-redis}}
+
+Redis is a NOSQL key-value database. While the type of the key can be
+only a string the type of a value can in addition to being a primitive
+type like number, string, blob or hyperloglog, can also be a set, a map
+or a sequence. A map in Redis is called a HMAP or hasp-map, indicating
+its implementation, and a sequence is called a list. For details refer
+to Redis.
+
+Notice that the three data structures: set, map and sequence cover
+almost all dat structure requirements. Redis does not provide a
+recursive data structure. A set cannot contain another set. With some
+discipline though we could achieve the same result by having a set of
+keys with each key refering to another set or map or sequence.
+
+\hypertarget{authentication}{%
+\subsection{Authentication}\label{authentication}}
+
+User names and hashed passwords are store in a map whose key is
+``users:passwords''. One of the first design issues that needs to be
+addressed is nomenclature of keys. I use the convention that the
+prefixi, ``users'' in this case is plural when it refers to the
+collection `users' and singular if we need to create a key for a
+specific user say, ``user:joe.''
+
+The password may be hashed as follows:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{local} \KeywordTok{function}\NormalTok{ hash_pwd}\OperatorTok{(}\NormalTok{user}\OperatorTok{,}\NormalTok{pwd}\OperatorTok{)}  
+\KeywordTok{local}\NormalTok{ sha256 }\OperatorTok{=} \FunctionTok{require}\StringTok{"resty.sha256"}
+\CommentTok{-- create a private closure for calculating digest of single string}
+  \KeywordTok{local}\NormalTok{ chunk }\OperatorTok{=}\NormalTok{ sha256}\OperatorTok{:}\NormalTok{new}\OperatorTok{()} 
+  \KeywordTok{local}\NormalTok{ seed}\OperatorTok{=}\StringTok{"hsGtghLTh5fglo6d"} \CommentTok{-- secret prefix}
+\NormalTok{  chunk}\OperatorTok{:}\NormalTok{update}\OperatorTok{(}\NormalTok{user}\OperatorTok{)}
+\NormalTok{  chunk}\OperatorTok{:}\NormalTok{update}\OperatorTok{(}\NormalTok{seed}\OperatorTok{)} 
+\NormalTok{  chunk}\OperatorTok{:}\NormalTok{update}\OperatorTok{(}\NormalTok{pwd}\OperatorTok{)}               
+  \ControlFlowTok{return}\NormalTok{ str}\OperatorTok{.}\NormalTok{to_hex}\OperatorTok{(}\NormalTok{chunk}\OperatorTok{:}\NormalTok{final}\OperatorTok{())}
+\ControlFlowTok{end}
+\end{Highlighting}
+\end{Shaded}
+
+The following helper function wraps the openning and closing of
+connection for a redis command
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{local} \KeywordTok{function}\NormalTok{ exec}\OperatorTok{(}\NormalTok{func}\OperatorTok{)}
+  \KeywordTok{local}\NormalTok{ red }\OperatorTok{=}\NormalTok{ redis}\OperatorTok{:}\NormalTok{new}\OperatorTok{()}
+
+\NormalTok{  red}\OperatorTok{:}\NormalTok{set_timeouts}\OperatorTok{(}\DecValTok{1000}\OperatorTok{,} \DecValTok{1000}\OperatorTok{,} \DecValTok{1000}\OperatorTok{)} \CommentTok{-- 1 sec}
+  \FunctionTok{assert}\OperatorTok{(}\NormalTok{ red}\OperatorTok{:}\FunctionTok{connect}\OperatorTok{(}\StringTok{"127.0.0.1"}\OperatorTok{,} \DecValTok{6379}\OperatorTok{))}
+  \KeywordTok{local}\NormalTok{ results}\OperatorTok{,}\NormalTok{ err }\OperatorTok{=}\NormalTok{ func}\OperatorTok{(}\NormalTok{red}\OperatorTok{)}
+\NormalTok{  red}\OperatorTok{:}\NormalTok{set_keepalive}\OperatorTok{(}\DecValTok{1000}\OperatorTok{,}\DecValTok{100}\OperatorTok{)}
+    \ControlFlowTok{return}\NormalTok{ results}\OperatorTok{,}\NormalTok{err}
+\ControlFlowTok{end}
+\end{Highlighting}
+\end{Shaded}
+
+Hence a verify password function is more easily implemented as follows
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{local}\NormalTok{ usertable}\OperatorTok{=}\StringTok{"users:passwords"}
+\KeywordTok{function}\NormalTok{ verify_pwd}\OperatorTok{(}\NormalTok{user}\OperatorTok{,}\NormalTok{pwd}\OperatorTok{)}
+  \KeywordTok{local}\NormalTok{ compute }\OperatorTok{=} \KeywordTok{function}\OperatorTok{(}\NormalTok{red}\OperatorTok{)}       
+    \ControlFlowTok{return}\NormalTok{  red}\OperatorTok{:}\NormalTok{hmget}\OperatorTok{(}\NormalTok{usertable}\OperatorTok{,}\NormalTok{user}\OperatorTok{)}        
+  \ControlFlowTok{end}     
+  \KeywordTok{local}\NormalTok{ results}\OperatorTok{,}\NormalTok{err }\OperatorTok{=}\NormalTok{ exec}\OperatorTok{(}\NormalTok{compute}\OperatorTok{)}
+  \ControlFlowTok{if}\NormalTok{  results }\ControlFlowTok{then}
+    \ControlFlowTok{return}\NormalTok{ hash_pwd}\OperatorTok{(}\NormalTok{user}\OperatorTok{,}\NormalTok{pwd}\OperatorTok{)==}\NormalTok{results}\OperatorTok{[}\DecValTok{1}\OperatorTok{]} \KeywordTok{and} \DecValTok{1} \KeywordTok{or} \DecValTok{0}
+  \ControlFlowTok{else}                    
+    \ControlFlowTok{return}\NormalTok{ results}\OperatorTok{,}\NormalTok{err}
+  \ControlFlowTok{end}                                  
+\ControlFlowTok{end}
+\end{Highlighting}
+\end{Shaded}
+
+A simple usage example is shown below:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{local}\NormalTok{ usrauth}\OperatorTok{=}\FunctionTok{require} \StringTok{"check_redis"}
+\KeywordTok{local}\NormalTok{ user}\OperatorTok{=}\StringTok{"joe3"}
+\KeywordTok{local}\NormalTok{ password}\OperatorTok{=}\StringTok{"password"}
+\KeywordTok{local}\NormalTok{ verified}\OperatorTok{,}\NormalTok{err }\OperatorTok{=}\NormalTok{ usrauth}\OperatorTok{.}\NormalTok{verify_pwd}\OperatorTok{(}\NormalTok{user}\OperatorTok{,}\NormalTok{password}\OperatorTok{)}
+\ControlFlowTok{if}\NormalTok{ verified }\KeywordTok{and}\NormalTok{ verified}\OperatorTok{==}\DecValTok{1} \ControlFlowTok{then}
+\CommentTok{--success}
+\ControlFlowTok{else}
+\CommentTok{--fail}
+\ControlFlowTok{end}
+\end{Highlighting}
+\end{Shaded}
+
+The list of functions available are:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{add\_role}\_(user\_name,role)\_ adds a role to the set
+  ``user:''
+\item
+  \textbf{del\_user\_role}\_(user\_name,role)\_ deletes a role from the
+  set ``user:''
+\item
+  \textbf{get\_assets}\_()\_ gets the set ``users:assets''
+\item
+  \textbf{get\_users}\_()\_ gets the set of keys of the map
+  ``users:passwords''
+\item
+  \textbf{add\_asset}\_(asset\_name,role)\_ adds ``role'' to set
+  ``assets:''
+\item
+  \textbf{del\_asset}\_(asset)\_ deletes the ``asset'' from the set
+  ``users:assets'' and deletes the key ``asset:''
+\item
+  \textbf{del\_user}\_(user\_name)\_ deletes the key ``'' from the map
+  ``users:passwords'' and deletes the key-value pair with key ``user:''
+\item
+  \textbf{add\_user}\_(user,pwd)\_ adds key-value
+  \textless{}user,hashed\_pwd\textgreater{} to the map
+  ``users:passwords'' Notice that if the user exists already its
+  password is overwritten
+\item
+  \textbf{verify\_pwd}\_(user,pwd)\_ verify the password as shown above
+\item
+  \textbf{user\_auth}\_(user\_name,asset\_name)\_ Computes the
+  intersection of ``user:'' and ``asset:'' and returns true if the set
+  contains at least one element
+\item
+  \textbf{del\_roles}\_(role)\_ ``role'' is removed from the set
+  ``users:roles'', and from every set ``user:*'' and ``asset:*''
+\item
+  \textbf{get\_roles}\_()\_ gets the list of all roles
+\end{itemize}
